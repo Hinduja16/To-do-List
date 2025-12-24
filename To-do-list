@@ -1,0 +1,155 @@
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+class Task {
+    int id;
+    String title;
+    String dueDate;
+    String status; // "Pending" or "Done"
+
+    Task(int id, String title, String dueDate, String status) {
+        this.id = id;
+        this.title = title;
+        this.dueDate = dueDate;
+        this.status = status;
+    }
+
+    @Override
+    public String toString() {
+        return id + " | " + title + " | " + dueDate + " | " + status;
+    }
+}
+
+public class ToDoManager {
+
+    private static final String FILE_NAME = "tasks.txt";
+    private static List<Task> tasks = new ArrayList<>();
+    private static int nextId = 1;
+
+    public static void main(String[] args) throws IOException {
+        loadTasksFromFile();
+        Scanner sc = new Scanner(System.in);
+        int choice;
+
+        while (true) {
+            System.out.println("\n--- To-Do List Manager ---");
+            System.out.println("1. Add Task");
+            System.out.println("2. View All Tasks");
+            System.out.println("3. View Pending Tasks");
+            System.out.println("4. Mark Task as Done");
+            System.out.println("5. Exit");
+            System.out.print("Enter your choice: ");
+            choice = sc.nextInt();
+            sc.nextLine(); // consume newline
+
+            switch (choice) {
+                case 1:
+                    addTask(sc);
+                    break;
+                case 2:
+                    viewAllTasks();
+                    break;
+                case 3:
+                    viewPendingTasks();
+                    break;
+                case 4:
+                    markTaskDone(sc);
+                    break;
+                case 5:
+                    saveTasksToFile();
+                    System.out.println("Goodbye!");
+                    System.exit(0);
+                default:
+                    System.out.println("Invalid choice!");
+            }
+        }
+    }
+
+    private static void addTask(Scanner sc) {
+        System.out.print("Enter task title: ");
+        String title = sc.nextLine();
+
+        System.out.print("Enter due date (e.g., 2025-01-10): ");
+        String dueDate = sc.nextLine();
+
+        Task t = new Task(nextId++, title, dueDate, "Pending");
+        tasks.add(t);
+        System.out.println("Task added: " + t);
+    }
+
+    private static void viewAllTasks() {
+        if (tasks.isEmpty()) {
+            System.out.println("No tasks found.");
+            return;
+        }
+        System.out.println("\nID | Title | Due Date | Status");
+        for (Task t : tasks) {
+            System.out.println(t);
+        }
+    }
+
+    private static void viewPendingTasks() {
+        boolean any = false;
+        System.out.println("\nID | Title | Due Date | Status");
+        for (Task t : tasks) {
+            if ("Pending".equalsIgnoreCase(t.status)) {
+                System.out.println(t);
+                any = true;
+            }
+        }
+        if (!any) {
+            System.out.println("No pending tasks.");
+        }
+    }
+
+    private static void markTaskDone(Scanner sc) {
+        System.out.print("Enter task ID to mark as done: ");
+        int id = sc.nextInt();
+
+        for (Task t : tasks) {
+            if (t.id == id) {
+                t.status = "Done";
+                System.out.println("Task updated: " + t);
+                return;
+            }
+        }
+        System.out.println("Task ID not found.");
+    }
+
+    private static void loadTasksFromFile() throws IOException {
+        File file = new File(FILE_NAME);
+        if (!file.exists()) {
+            return; // no tasks yet
+        }
+
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line;
+        int maxId = 0;
+
+        while ((line = br.readLine()) != null) {
+            // Format: id|title|dueDate|status
+            String[] parts = line.split("\\|");
+            if (parts.length == 4) {
+                int id = Integer.parseInt(parts[0].trim());
+                String title = parts[1].trim();
+                String dueDate = parts[2].trim();
+                String status = parts[3].trim();
+                tasks.add(new Task(id, title, dueDate, status));
+                if (id > maxId) maxId = id;
+            }
+        }
+        br.close();
+        nextId = maxId + 1;
+    }
+
+    private static void saveTasksToFile() throws IOException {
+        BufferedWriter bw = new BufferedWriter(new FileWriter(FILE_NAME));
+        for (Task t : tasks) {
+            bw.write(t.id + " | " + t.title + " | " + t.dueDate + " | " + t.status);
+            bw.newLine();
+        }
+        bw.close();
+    }
+}
